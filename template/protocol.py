@@ -12,7 +12,12 @@ Task Types:
 - story_arc: Generate 12-chapter story structure
 - chapters: Generate detailed chapter content with choices
 
-PROTOCOL VERSION: 3.2.0
+PROTOCOL VERSION: 3.2.1
+CHANGES FROM 3.2.0:
+- Fixed characters field type: Dict[str, Any] -> List[Dict[str, Any]]
+- This aligns with actual usage in scoring/structure.py
+- Fixes Pydantic validation error when passing character list
+
 CHANGES FROM 3.1.0:
 - Added model_info field for transparency and quality control
 - Miners must disclose which model they use for generation
@@ -90,7 +95,7 @@ class StoryGenerationSynapse(bt.Synapse):
 
     # Protocol version
     protocol_version: str = Field(
-        default="3.2.0",
+        default="3.2.1",
         description="Protocol version for compatibility checking"
     )
 
@@ -112,7 +117,7 @@ class StoryGenerationSynapse(bt.Synapse):
         description="Story blueprint (required for characters/story_arc/chapters tasks)"
     )
 
-    characters: Optional[Dict[str, Any]] = Field(
+    characters: Optional[List[Dict[str, Any]]] = Field(
         default=None,
         description="Character profiles (required for story_arc/chapters tasks)"
     )
@@ -356,7 +361,7 @@ def create_characters_synapse(
 
 def create_story_arc_synapse(
     blueprint: Dict[str, Any],
-    characters: Dict[str, Any],
+    characters: List[Dict[str, Any]],
     user_input: str
 ) -> StoryGenerationSynapse:
     """
@@ -380,7 +385,7 @@ def create_story_arc_synapse(
 
 def create_chapters_synapse(
     blueprint: Dict[str, Any],
-    characters: Dict[str, Any],
+    characters: List[Dict[str, Any]],
     story_arc: Dict[str, Any],
     chapter_ids: List[int],
     user_input: str
