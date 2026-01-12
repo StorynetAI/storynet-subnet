@@ -27,11 +27,18 @@
 
 ---
 
-## External Dependencies
+## LLM for Narrative Scoring (Optional)
 
-**None required.** All scoring is rule-based and deterministic.
+The validator uses AI to evaluate story quality (30 pts out of 100). It auto-detects any OpenAI-compatible API:
 
-No GPU, no LLM API, no external services needed.
+**Auto-detection order:**
+1. `OPENAI_API_KEY` environment variable → uses OpenAI
+2. `OPENAI_API_BASE` environment variable → uses custom endpoint
+3. Local endpoints at `localhost:8000`, `localhost:30000`, `localhost:11434`
+
+**Works with:** OpenAI, vLLM, SGLang, Ollama, LocalAI, or any OpenAI-compatible endpoint.
+
+**Without LLM:** Validator still works, narrative score defaults to 15/30.
 
 ---
 
