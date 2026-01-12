@@ -319,15 +319,13 @@ class StoryValidator:
                 "tone": "Suspenseful",
                 "target_audience": "Adults"
             }
-            mock_characters = {
-                "characters": [
-                    {"id": "protagonist", "name": "Hero", "archetype": "Hero"},
-                    {"id": "ally", "name": "Ally", "archetype": "Helper"},
-                    {"id": "rival", "name": "Rival", "archetype": "Villain"},
-                    {"id": "mentor", "name": "Mentor", "archetype": "Sage"},
-                    {"id": "wildcard", "name": "Wildcard", "archetype": "Mystery"}
-                ]
-            }
+            mock_characters = [
+                {"id": "protagonist", "name": "Hero", "archetype": "Hero"},
+                {"id": "ally", "name": "Ally", "archetype": "Helper"},
+                {"id": "rival", "name": "Rival", "archetype": "Villain"},
+                {"id": "mentor", "name": "Mentor", "archetype": "Sage"},
+                {"id": "wildcard", "name": "Wildcard", "archetype": "Mystery"}
+            ]
             synapse = create_story_arc_synapse(mock_blueprint, mock_characters, user_input)
             context["blueprint"] = mock_blueprint
             context["characters"] = mock_characters
@@ -335,7 +333,7 @@ class StoryValidator:
         elif task_type == "chapters":
             # Mock complete context
             mock_blueprint = {"title": "Sample Story"}
-            mock_characters = {"characters": []}
+            mock_characters = []
             mock_story_arc = {
                 "title": "Sample Story",
                 "chapters": [{"id": i} for i in range(1, 13)]
