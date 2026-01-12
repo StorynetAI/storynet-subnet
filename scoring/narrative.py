@@ -71,10 +71,13 @@ class NarrativeEvaluator:
     """
     AI-based narrative quality evaluator.
 
-    Supports multiple backends:
-    - OpenAI API (gpt-4o-mini, gpt-4, etc.)
-    - Local Ollama (qwen, llama, etc.)
-    - Custom HTTP endpoint
+    Uses OpenAI-compatible API, which works with:
+    - OpenAI
+    - vLLM
+    - SGLang
+    - Ollama
+    - LocalAI
+    - Any OpenAI-compatible endpoint
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -132,11 +135,9 @@ class NarrativeEvaluator:
         """Return default configuration."""
         return {
             "enabled": True,
-            "backend": "zhipu",  # "openai", "ollama", "zhipu", "custom"
-            "model": "qwen2.5:7b",
-            "ollama_url": "http://localhost:11434",
-            "openai_model": "gpt-4o-mini",
-            "zhipu_model": "glm-4-flash",
+            "api_base": None,  # Auto-detect from environment
+            "api_key": None,   # Auto-detect from environment
+            "model": "gpt-4o-mini",
             "timeout": 30,
             "max_retries": 2,
             "evaluation_prompt": DEFAULT_EVALUATION_PROMPT,
@@ -180,133 +181,112 @@ class NarrativeEvaluator:
                 oldest = min(self.cache.items(), key=lambda x: x[1]["timestamp"])
                 del self.cache[oldest[0]]
 
-    def _call_ollama(self, prompt: str) -> Optional[str]:
-        """Call Ollama API."""
-        if not HTTPX_AVAILABLE:
-            bt.logging.warning("httpx not available for Ollama calls")
+    def _detect_api_config(self) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Auto-detect API configuration from environment.
+
+        Returns:
+            Tuple of (api_base, api_key)
+        """
+        # Check config first
+        api_base = self.config.get("api_base")
+        api_key = self.config.get("api_key")
+
+        if api_base:
+            return api_base, api_key or os.getenv("OPENAI_API_KEY", "")
+
+        # Auto-detect from environment
+        if os.getenv("OPENAI_API_KEY"):
+            return "https://api.openai.com/v1", os.getenv("OPENAI_API_KEY")
+
+        if os.getenv("OPENAI_API_BASE"):
+            return os.getenv("OPENAI_API_BASE"), os.getenv("OPENAI_API_KEY", "")
+
+        # Try local endpoints (vLLM, SGLang, Ollama)
+        local_endpoints = [
+            "http://localhost:8000/v1",   # vLLM default
+            "http://localhost:30000/v1",  # SGLang default
+            "http://localhost:11434/v1",  # Ollama
+        ]
+
+        if HTTPX_AVAILABLE:
+            for endpoint in local_endpoints:
+                try:
+                    with httpx.Client(timeout=2) as client:
+                        resp = client.get(f"{endpoint}/models")
+                        if resp.status_code == 200:
+                            bt.logging.info(f"Auto-detected local LLM at {endpoint}")
+                            return endpoint, ""
+                except:
+                    continue
+
+        return None, None
+
+    def _call_llm(self, prompt: str) -> Optional[str]:
+        """
+        Call LLM using OpenAI-compatible API.
+
+        Works with OpenAI, vLLM, SGLang, Ollama, LocalAI, etc.
+        """
+        api_base, api_key = self._detect_api_config()
+
+        if not api_base:
+            bt.logging.debug("No LLM API configured or detected")
             return None
 
-        url = self.config.get("ollama_url", "http://localhost:11434")
-        model = self.config.get("model", "qwen2.5:7b")
+        model = self.config.get("model", "gpt-4o-mini")
         timeout = self.config.get("timeout", 30)
 
-        try:
-            with httpx.Client(timeout=timeout) as client:
-                response = client.post(
-                    f"{url}/api/generate",
-                    json={
-                        "model": model,
-                        "prompt": prompt,
-                        "stream": False,
-                        "options": {
-                            "temperature": 0.3,  # Low temp for consistent scoring
-                            "num_predict": 500
+        # Use OpenAI client if available
+        if OPENAI_AVAILABLE:
+            try:
+                client = openai.OpenAI(
+                    base_url=api_base,
+                    api_key=api_key or "not-needed",
+                    timeout=timeout
+                )
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a professional story editor. Respond only with valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=500
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                bt.logging.warning(f"LLM API error: {e}")
+                self.api_errors += 1
+
+        # Fallback to httpx
+        elif HTTPX_AVAILABLE:
+            try:
+                headers = {"Content-Type": "application/json"}
+                if api_key:
+                    headers["Authorization"] = f"Bearer {api_key}"
+
+                with httpx.Client(timeout=timeout) as client:
+                    response = client.post(
+                        f"{api_base}/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": model,
+                            "messages": [
+                                {"role": "system", "content": "You are a professional story editor. Respond only with valid JSON."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            "temperature": 0.3,
+                            "max_tokens": 500
                         }
-                    }
-                )
-                response.raise_for_status()
-                return response.json().get("response", "")
-        except Exception as e:
-            bt.logging.warning(f"Ollama API error: {e}")
-            self.api_errors += 1
-            return None
+                    )
+                    response.raise_for_status()
+                    return response.json()["choices"][0]["message"]["content"]
+            except Exception as e:
+                bt.logging.warning(f"LLM API error: {e}")
+                self.api_errors += 1
 
-    def _call_openai(self, prompt: str) -> Optional[str]:
-        """Call OpenAI API."""
-        if not OPENAI_AVAILABLE:
-            bt.logging.warning("OpenAI not available")
-            return None
-
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            bt.logging.warning("OPENAI_API_KEY not set")
-            return None
-
-        model = self.config.get("openai_model", "gpt-4o-mini")
-        timeout = self.config.get("timeout", 30)
-
-        try:
-            client = openai.OpenAI(api_key=api_key, timeout=timeout)
-            response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": "You are a professional story editor. Respond only with valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            bt.logging.warning(f"OpenAI API error: {e}")
-            self.api_errors += 1
-            return None
-
-    def _call_custom(self, prompt: str) -> Optional[str]:
-        """Call custom HTTP endpoint."""
-        if not HTTPX_AVAILABLE:
-            return None
-
-        url = self.config.get("custom_url")
-        if not url:
-            return None
-
-        timeout = self.config.get("timeout", 30)
-        headers = self.config.get("custom_headers", {})
-
-        try:
-            with httpx.Client(timeout=timeout) as client:
-                response = client.post(
-                    url,
-                    json={"prompt": prompt},
-                    headers=headers
-                )
-                response.raise_for_status()
-                return response.json().get("response", response.text)
-        except Exception as e:
-            bt.logging.warning(f"Custom API error: {e}")
-            self.api_errors += 1
-            return None
-
-    def _call_zhipu(self, prompt: str) -> Optional[str]:
-        """Call Zhipu AI (GLM) API."""
-        if not HTTPX_AVAILABLE:
-            bt.logging.warning("httpx not available for Zhipu calls")
-            return None
-
-        api_key = os.getenv("ZHIPU_API_KEY")
-        if not api_key:
-            bt.logging.warning("ZHIPU_API_KEY not set")
-            return None
-
-        model = self.config.get("zhipu_model", "glm-4-flash")
-        timeout = self.config.get("timeout", 30)
-
-        try:
-            with httpx.Client(timeout=timeout) as client:
-                response = client.post(
-                    "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": "You are a professional story editor. Respond only with valid JSON."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.3,
-                        "max_tokens": 500
-                    }
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            bt.logging.warning(f"Zhipu API error: {e}")
-            self.api_errors += 1
-            return None
+        return None
 
     def _parse_ai_response(self, response: str) -> Optional[Dict[str, Any]]:
         """Parse AI response to extract scores."""
@@ -403,20 +383,10 @@ class NarrativeEvaluator:
         context_str = json.dumps(context, ensure_ascii=False, indent=2)[:1000]  # Limit context
         prompt = prompt_template.format(content=content[:3000], context=context_str)
 
-        # Call AI backend
-        backend = self.config.get("backend", "zhipu")
+        # Call LLM
         response = None
-
         for attempt in range(self.config.get("max_retries", 2) + 1):
-            if backend == "openai":
-                response = self._call_openai(prompt)
-            elif backend == "ollama":
-                response = self._call_ollama(prompt)
-            elif backend == "zhipu":
-                response = self._call_zhipu(prompt)
-            elif backend == "custom":
-                response = self._call_custom(prompt)
-
+            response = self._call_llm(prompt)
             if response:
                 break
             time.sleep(0.5 * (attempt + 1))
@@ -425,10 +395,9 @@ class NarrativeEvaluator:
         parsed = self._parse_ai_response(response)
 
         if not parsed:
-            # Fallback if AI fails
-            bt.logging.debug("AI evaluation failed, using fallback score")
+            bt.logging.debug("LLM evaluation failed, using fallback score")
             breakdown["evaluation_method"] = "fallback"
-            return self.config.get("fallback_score", 10.0), breakdown
+            return self.config.get("fallback_score", 15.0), breakdown
 
         # Extract dimension scores
         weights = self.config.get("dimension_weights", {
