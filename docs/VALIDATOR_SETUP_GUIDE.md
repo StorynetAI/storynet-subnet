@@ -27,18 +27,28 @@
 
 ---
 
-## LLM for Narrative Scoring (Optional)
+## LLM for Narrative Scoring (Recommended)
 
-The validator uses AI to evaluate story quality (30 pts out of 100). It auto-detects any OpenAI-compatible API:
+The validator uses AI to evaluate story quality (30 pts out of 100). It auto-detects any OpenAI-compatible API.
+
+> ⚠️ **Important for Consensus**: To ensure consistent scoring across validators, we recommend all validators use the same LLM configuration. Contact the team for API access.
+
+**Configuration:**
+
+```bash
+# In your .env file:
+OPENAI_API_BASE=https://open.bigmodel.cn/api/paas/v4
+OPENAI_API_KEY=<contact team for API key>
+```
 
 **Auto-detection order:**
-1. `OPENAI_API_KEY` environment variable → uses OpenAI
-2. `OPENAI_API_BASE` environment variable → uses custom endpoint
+1. `OPENAI_API_BASE` + `OPENAI_API_KEY` → uses custom endpoint
+2. `OPENAI_API_KEY` only → uses OpenAI
 3. Local endpoints at `localhost:8000`, `localhost:30000`, `localhost:11434`
 
-**Works with:** OpenAI, vLLM, SGLang, Ollama, LocalAI, or any OpenAI-compatible endpoint.
+**Works with:** OpenAI, Zhipu GLM, vLLM, SGLang, Ollama, or any OpenAI-compatible endpoint.
 
-**Without LLM:** Validator still works, narrative score defaults to 15/30.
+**Without LLM:** Validator still works, narrative score defaults to 15/30. However, this may cause scoring differences with other validators.
 
 ---
 
