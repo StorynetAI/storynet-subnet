@@ -127,6 +127,15 @@ class StoryValidator:
         # Load model quality policy (Protocol v3.2.0)
         self.model_policy = self._load_model_policy()
 
+        # State file path for persistence
+        self.state_file = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "validator_state.json"
+        )
+
+        # Load persisted state (EMA scores, violations, etc.)
+        self._load_state()
+
         bt.logging.info(f"✅ Wallet: {self.wallet.hotkey.ss58_address}")
         bt.logging.info(f"✅ Netuid: {self.config.netuid}")
         bt.logging.info(f"✅ Query interval: {self.query_interval}s")
@@ -163,6 +172,77 @@ class StoryValidator:
                     }
                 }
             }
+
+    def _load_state(self):
+        """
+        Load persisted validator state from file.
+
+        This ensures EMA scores and other state survive validator restarts.
+        Without this, all miner scores would reset to 0 on restart.
+        """
+        try:
+            if os.path.exists(self.state_file):
+                with open(self.state_file, 'r', encoding='utf-8') as f:
+                    state = json.load(f)
+
+                # Restore EMA scores (convert string keys back to int)
+                self.scores = {int(k): v for k, v in state.get("scores", {}).items()}
+
+                # Restore violations count
+                self.violations = {int(k): v for k, v in state.get("violations", {}).items()}
+
+                # Restore blacklist
+                self.blacklist = set(state.get("blacklist", []))
+
+                # Restore last weights block
+                self.last_weights_block = state.get("last_weights_block", 0)
+
+                # Restore statistics
+                self.total_queries = state.get("total_queries", 0)
+                self.successful_queries = state.get("successful_queries", 0)
+                self.total_rewards = state.get("total_rewards", 0.0)
+
+                bt.logging.success(
+                    f"✅ Loaded validator state from {self.state_file}: "
+                    f"{len(self.scores)} miner scores, "
+                    f"{len(self.blacklist)} blacklisted, "
+                    f"last_weights_block={self.last_weights_block}"
+                )
+            else:
+                bt.logging.info(f"📝 No state file found at {self.state_file}, starting fresh")
+        except Exception as e:
+            bt.logging.warning(f"⚠️ Failed to load state file: {e}, starting fresh")
+
+    def _save_state(self):
+        """
+        Save validator state to file for persistence across restarts.
+
+        This is called after updating EMA scores and setting weights
+        to ensure state is not lost on restart.
+        """
+        try:
+            state = {
+                "scores": self.scores,
+                "violations": self.violations,
+                "blacklist": list(self.blacklist),
+                "last_weights_block": self.last_weights_block,
+                "total_queries": self.total_queries,
+                "successful_queries": self.successful_queries,
+                "total_rewards": self.total_rewards,
+                "saved_at": time.time()
+            }
+
+            # Write to temp file first, then rename (atomic operation)
+            temp_file = self.state_file + ".tmp"
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(state, f, indent=2)
+
+            # Atomic rename
+            os.replace(temp_file, self.state_file)
+
+            bt.logging.debug(f"💾 Saved validator state: {len(self.scores)} miner scores")
+        except Exception as e:
+            bt.logging.error(f"❌ Failed to save state: {e}")
 
     def apply_model_quality_multiplier(
         self,
@@ -1053,12 +1133,15 @@ class StoryValidator:
             # 6. Update EMA scores
             self.update_ema_scores(scores)
 
-            # 7. Update statistics
+            # 7. Save state to file (persist EMA scores across restarts)
+            self._save_state()
+
+            # 8. Update statistics
             self.total_queries += 1
             self.successful_queries += len([s for s in scores.values() if s > 0])
             self.total_rewards += sum(scores.values())
 
-            # 8. Set weights (rate limited by blocks, not query count)
+            # 9. Set weights (rate limited by blocks, not query count)
             # Try to set weights every step, let can_set_weights() handle rate limiting
             if self.can_set_weights():
                 bt.logging.info(f"\n{'='*60}")
@@ -1104,6 +1187,10 @@ class StoryValidator:
 
         except KeyboardInterrupt:
             bt.logging.info("🛑 Shutting down validator...")
+
+            # Save final state before shutdown
+            self._save_state()
+            bt.logging.info("💾 Final state saved")
 
             # Final weight update
             await self.set_weights()
