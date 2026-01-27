@@ -5,7 +5,7 @@ StoryNet Bittensor Validator
 This validator:
 1. Generates tasks for miners
 2. Queries miners with different task types
-3. Evaluates responses using scoring system
+3. Gets scores from external API
 4. Calculates and sets weights on-chain
 5. Implements anti-cheating mechanisms
 
@@ -48,12 +48,11 @@ from template.utils import (
     exponential_moving_average,
     normalize_weights
 )
-from scoring import (
-    calculate_technical_score,
-    calculate_structure_score,
-    calculate_content_score,
-    calculate_narrative_score
-)
+
+# Import API client
+import requests
+import json
+from typing import Dict, Any, List
 
 # Load environment variables
 load_dotenv()
@@ -71,9 +70,14 @@ class StoryValidator:
     5. Detects and blacklists cheating miners
     """
 
-    def __init__(self, config: bt.Config):
+    def __init__(self, config=None):
         """Initialize the validator."""
-        self.config = config
+        self.config = config or self.get_config()
+        
+        # 如果api_endpoint未设置，则使用默认值
+        if not hasattr(self.config, 'api_endpoint') or self.config.api_endpoint is None:
+            self.config.api_endpoint = "https://api.storyai.art"
+        
         bt.logging.info("Initializing StoryNet Validator...")
 
         # Initialize Bittensor components
@@ -87,7 +91,8 @@ class StoryValidator:
         self.timeout = int(os.getenv("VALIDATOR_TIMEOUT", "60"))
         self.ema_alpha = float(os.getenv("EMA_ALPHA", "0.1"))
         self.temperature = float(os.getenv("SOFTMAX_TEMPERATURE", "2.0"))
-        self.weight_update_frequency = int(os.getenv("WEIGHT_UPDATE_FREQ", "100"))
+        # 修改权重更新频率，从固定100改为可配置参数，默认为10
+        self.weight_update_frequency = int(os.getenv("WEIGHT_UPDATE_FREQUENCY", "100"))
 
         # Weight submission tracking (block-based rate limiting)
         self.last_weights_block = 0
@@ -103,7 +108,7 @@ class StoryValidator:
 
         # State
         self.scores = {}  # {miner_uid: ema_score}
-        self.history = deque(maxlen=1000)  # Historical responses for plagiarism detection
+        self.history = {}  # {miner_uid: {'scores': deque, 'timestamps': deque}}
         self.blacklist = set()  # Blacklisted miner UIDs
         self.violations = {}  # {miner_uid: violation_count}
 
@@ -124,9 +129,6 @@ class StoryValidator:
             "一个AI觉醒的故事"
         ]
 
-        # Load model quality policy (Protocol v3.2.0)
-        self.model_policy = self._load_model_policy()
-
         # State file path for persistence
         self.state_file = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
@@ -139,39 +141,7 @@ class StoryValidator:
         bt.logging.info(f"✅ Wallet: {self.wallet.hotkey.ss58_address}")
         bt.logging.info(f"✅ Netuid: {self.config.netuid}")
         bt.logging.info(f"✅ Query interval: {self.query_interval}s")
-        bt.logging.info(f"✅ Model quality policy loaded")
 
-    def _load_model_policy(self) -> Dict[str, Any]:
-        """Load model quality policy from YAML file."""
-        policy_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "validators/config/model_policy.yaml"
-        )
-
-        try:
-            with open(policy_path, 'r', encoding='utf-8') as f:
-                policy = yaml.safe_load(f)
-                return policy
-        except Exception as e:
-            bt.logging.warning(f"Failed to load model policy: {e}, using defaults")
-            # Return default policy if file not found
-            return {
-                "quality_policy": {
-                    "min_quality_score": 0.6,
-                    "mode_multipliers": {
-                        "local": 1.0,
-                        "vllm": 1.0,
-                        "custom": 1.0,
-                        "api": 1.0,
-                        "unknown": 1.0
-                    },
-                    "recommended_models": [],
-                    "blacklisted_models": [],
-                    "penalties": {
-                        "no_model_info": 1.0
-                    }
-                }
-            }
 
     def _load_state(self):
         """
@@ -187,6 +157,16 @@ class StoryValidator:
 
                 # Restore EMA scores (convert string keys back to int)
                 self.scores = {int(k): v for k, v in state.get("scores", {}).items()}
+
+                # Restore history data
+                history_data = state.get("history", {})
+                self.history = {}
+                for uid_str, hist_data in history_data.items():
+                    uid = int(uid_str)
+                    self.history[uid] = {
+                        'scores': deque(hist_data['scores'], maxlen=100),  # Keep last 100 scores
+                        'timestamps': deque(hist_data['timestamps'], maxlen=100)  # Keep timestamps
+                    }
 
                 # Restore violations count
                 self.violations = {int(k): v for k, v in state.get("violations", {}).items()}
@@ -223,6 +203,13 @@ class StoryValidator:
         try:
             state = {
                 "scores": self.scores,
+                "history": {
+                    uid: {
+                        "scores": list(hist['scores']),
+                        "timestamps": list(hist['timestamps'])
+                    }
+                    for uid, hist in self.history.items()
+                },
                 "violations": self.violations,
                 "blacklist": list(self.blacklist),
                 "last_weights_block": self.last_weights_block,
@@ -450,185 +437,65 @@ class StoryValidator:
                 synapse=synapse,
                 timeout=self.timeout
             )
-            return responses
+            
+            # Debug: log the actual responses received
+            for i, response in enumerate(responses):
+                bt.logging.debug(f"Raw response from miner {i}: type={type(response)}")
+                if hasattr(response, '__dict__'):
+                    bt.logging.debug(f"Response {i} attributes: {list(response.__dict__.keys())}")
+                if isinstance(response, dict):
+                    bt.logging.debug(f"Response {i} dict keys: {list(response.keys())}")
+                    if 'output_data' in response:
+                        output_size = len(json.dumps(response['output_data'], ensure_ascii=False)) if response['output_data'] else 0
+                        bt.logging.debug(f"Response {i} output_data size: {output_size}")
+                elif hasattr(response, 'output_data'):
+                    output_size = len(json.dumps(response.output_data, ensure_ascii=False)) if response.output_data else 0
+                    bt.logging.debug(f"Response {i} has output_data attribute, size: {output_size}")
+                else:
+                    bt.logging.debug(f"Response {i} content: {str(response)[:200] if response else 'None'}")
+            
+            # Process responses to ensure they are StoryGenerationSynapse objects
+            processed_responses = []
+            for i, response in enumerate(responses):
+                if isinstance(response, StoryGenerationSynapse):
+                    # Direct StoryGenerationSynapse object - use as-is
+                    bt.logging.debug(f"Response {i} is StoryGenerationSynapse object")
+                    processed_responses.append(response)
+                elif isinstance(response, dict):
+                    # Handle dict response format - extract fields from the dictionary
+                    # Create a new StoryGenerationSynapse instance and populate it with the data
+                    synapse_obj = StoryGenerationSynapse()
+                    
+                    # Log all available keys in the response dict
+                    bt.logging.debug(f"Processing dict response {i} with keys: {list(response.keys())}")
+                    
+                    # Extract all fields from the dict response to the synapse object
+                    for key, value in response.items():
+                        if hasattr(synapse_obj, key):
+                            setattr(synapse_obj, key, value)
+                            bt.logging.debug(f"Set {key} = {value}")
+                    
+                    # Ensure all required fields are populated
+                    if not hasattr(synapse_obj, 'output_data') or getattr(synapse_obj, 'output_data', None) is None:
+                        synapse_obj.output_data = response
+                        bt.logging.debug(f"Used entire response as output_data for {i}")
+                    
+                    # Debug: log what we extracted
+                    output_size = len(json.dumps(synapse_obj.output_data, ensure_ascii=False)) if synapse_obj.output_data else 0
+                    bt.logging.debug(f"Processed dict response {i}: output_data_size={output_size}, gen_time={synapse_obj.generation_time}, model_info={synapse_obj.model_info}")
+                    processed_responses.append(synapse_obj)
+                else:
+                    # Fallback: create empty synapse if response type is unexpected
+                    bt.logging.warning(f"Unexpected response type from miner {i}: {type(response)}")
+                    synapse_obj = StoryGenerationSynapse()
+                    synapse_obj.output_data = {"error": "Invalid response type received"}
+                    processed_responses.append(synapse_obj)
+            
+            return processed_responses
         except Exception as e:
             bt.logging.error(f"Error querying miners: {e}")
-            return [synapse] * len(miners)  # Return empty responses on error
-
-    def score_response(
-        self,
-        response: StoryGenerationSynapse,
-        context: Dict[str, Any]
-    ) -> Tuple[float, Dict[str, Any]]:
-        """
-        Score a miner's response using 3-part scoring system with model quality multiplier (Protocol v3.2.0).
-
-        Scoring components:
-        1. Technical Score (30 points): Validity, performance, format
-        2. Structure Score (40 points): Completeness, field quality
-        3. Content Score (30 points): Creativity, coherence, relevance
-        4. Model Quality Multiplier: Based on model mode, name, and quality policy
-
-        Args:
-            response: Miner's response synapse
-            context: Task context
-
-        Returns:
-            Tuple of (final_score, breakdown) where final_score includes model quality multiplier
-        """
-        # Initialize breakdown
-        breakdown = {
-            "technical": 0.0,
-            "structure": 0.0,
-            "content": 0.0,
-            "total": 0.0
-        }
-
-        # Get output data (v3.0.0: direct Dict access)
-        data = response.output_data
-        if not data:
-            return 0.0, breakdown
-
-        # Get required fields
-        required_fields = response.get_required_output_fields()
-
-        # 1. Technical Score (20 points) - Objective, rule-based
-        # v3.0.0: convert output_data to JSON string for technical scoring
-        output_json_str = json.dumps(data, ensure_ascii=False)
-        tech_score_raw, tech_breakdown = calculate_technical_score(
-            output_json_str,
-            response.generation_time,
-            response.task_type,
-            required_fields
-        )
-        # Scale from 30 to 20 points
-        tech_score = tech_score_raw * (20.0 / 30.0)
-        breakdown["technical"] = tech_score
-        breakdown["technical_breakdown"] = tech_breakdown
-
-        # 2. Structure Score (30 points) - Objective, rule-based
-        struct_score_raw, struct_breakdown = calculate_structure_score(
-            data,
-            response.task_type
-        )
-        # Scale from 40 to 30 points
-        struct_score = struct_score_raw * (30.0 / 40.0)
-        breakdown["structure"] = struct_score
-        breakdown["structure_breakdown"] = struct_breakdown
-
-        # 3. Content Score (20 points) - Semi-objective, heuristic-based
-        content_score_raw, content_breakdown = calculate_content_score(
-            data,
-            context,
-            response.task_type,
-            history=[h["output_data"] for h in list(self.history)[-20:]],
-            use_embeddings=False  # Set to True when OpenAI embeddings are available
-        )
-        # Scale from 30 to 20 points
-        content_score = content_score_raw * (20.0 / 30.0)
-        breakdown["content"] = content_score
-        breakdown["content_breakdown"] = content_breakdown
-
-        # 4. Narrative Merit Score (30 points) - AI-based evaluation
-        # This uses server-side LLM evaluation with private prompts
-        narrative_score, narrative_breakdown = calculate_narrative_score(
-            data,
-            context,
-            response.task_type
-        )
-        breakdown["narrative"] = narrative_score
-        breakdown["narrative_breakdown"] = narrative_breakdown
-
-        # Base score (0-100)
-        base_score = tech_score + struct_score + content_score + narrative_score
-        breakdown["base_score"] = base_score
-
-        # Apply model quality multiplier (Protocol v3.2.0)
-        model_info = response.model_info if hasattr(response, 'model_info') else {}
-        final_score, multiplier_breakdown = self.apply_model_quality_multiplier(
-            base_score,
-            model_info
-        )
-
-        # Add multiplier info to breakdown
-        breakdown["model_quality"] = multiplier_breakdown
-        breakdown["total"] = final_score
-
-        return final_score, breakdown
-
-    def detect_plagiarism(
-        self,
-        response: StoryGenerationSynapse,
-        all_responses: List[StoryGenerationSynapse]
-    ) -> Tuple[bool, str, float]:
-        """
-        Detect plagiarism in response (Protocol v3.0.0).
-
-        Args:
-            response: Current response to check
-            all_responses: All responses in current batch
-
-        Returns:
-            Tuple of (is_plagiarism, type, similarity)
-        """
-        # First check if response is None or doesn't have output_data
-        if response is None or not hasattr(response, 'output_data'):
-            return False, "", 0.0
-
-        current_data = response.output_data
-        if not current_data:
-            return False, "", 0.0
-
-        # Check against current batch (cross-miner copying)
-        for other in all_responses:
-            if other == response:
-                continue
-
-            # Skip if other response is None or invalid
-            if other is None or not hasattr(other, 'output_data'):
-                continue
-
-            other_data = other.output_data
-            if not other_data:
-                continue
-
-            similarity = self.calculate_similarity(current_data, other_data)
-
-            if similarity > 0.95:
-                return True, "cross_miner_copy", similarity
-
-        # Check against history (template reuse)
-        for historical in list(self.history)[-50:]:
-            historical_data = historical.get("output_data")
-            if not historical_data:
-                continue
-
-            similarity = self.calculate_similarity(current_data, historical_data)
-
-            if similarity > 0.90:
-                return True, "template_reuse", similarity
-
-        return False, "original", 0.0
-
-    def calculate_similarity(self, data1: Dict[str, Any], data2: Dict[str, Any]) -> float:
-        """Calculate simple similarity between two data objects."""
-        str1 = json.dumps(data1, ensure_ascii=False, sort_keys=True)
-        str2 = json.dumps(data2, ensure_ascii=False, sort_keys=True)
-
-        # Character-level bigrams
-        def get_bigrams(s: str) -> set:
-            return set(s[i:i+2] for i in range(len(s) - 1))
-
-        bigrams1 = get_bigrams(str1)
-        bigrams2 = get_bigrams(str2)
-
-        if not bigrams1 or not bigrams2:
-            return 0.0
-
-        intersection = len(bigrams1 & bigrams2)
-        union = len(bigrams1 | bigrams2)
-
-        return intersection / union if union > 0 else 0.0
+            # Return empty synapse objects in case of error
+            return [StoryGenerationSynapse()] * len(miners)
 
     def _is_miner_available(self, uid: int, axon: bt.AxonInfo) -> bool:
         """
@@ -670,7 +537,7 @@ class StoryValidator:
         return True
 
     def update_ema_scores(self, new_scores: Dict[int, float]):
-        """Update EMA scores for miners."""
+        """Update EMA scores for miners and record history."""
         for uid, score in new_scores.items():
             if uid not in self.scores:
                 self.scores[uid] = score
@@ -680,6 +547,17 @@ class StoryValidator:
                     self.scores[uid],
                     self.ema_alpha
                 )
+            
+            # Update history data
+            if uid not in self.history:
+                self.history[uid] = {
+                    'scores': deque(maxlen=100),
+                    'timestamps': deque(maxlen=100)
+                }
+            
+            # Add current score and timestamp to history
+            self.history[uid]['scores'].append(score)
+            self.history[uid]['timestamps'].append(time.time())
 
     def get_burn_uid(self) -> int:
         """
@@ -714,14 +592,12 @@ class StoryValidator:
 
     def calculate_weights(self) -> Dict[int, float]:
         """
-        Calculate weights using 3-factor system (inspired by SoulX):
-        - 15% Stake weight (防止新矿工作弊)
-        - 75% Quality score (当前表现)
-        - 10% Historical score (长期稳定性)
-
-        Burn UID mechanism (inspired by DogeLayer):
-        - Owner UID is excluded from miner scoring
-        - Remaining weight (after miners) is assigned to Owner
+        Calculate weights using updated system:
+        - 0% Stake weight (removed to eliminate stake influence)
+        - 60% Quality score (current表现)
+        - 25% Historical score (长期稳定性)
+        - 15% removed from original stake component
+        The composite score is calculated as 60% quality + 25% historical of individual miner's scores
         """
         if not self.scores:
             return {}
@@ -729,7 +605,7 @@ class StoryValidator:
         # Get burn_uid (subnet owner) to exclude from miner weights
         burn_uid = self.get_burn_uid()
 
-        # Calculate composite scores with stake consideration
+        # Calculate composite scores without stake consideration
         # IMPORTANT: Exclude burn_uid (owner) from miner scoring
         composite_scores = {}
 
@@ -739,34 +615,25 @@ class StoryValidator:
                 bt.logging.debug(f"Skipping burn_uid {uid} from miner scoring")
                 continue
 
-            # 1. Get stake weight
-            try:
-                stake = self.metagraph.S[uid].item()
-                max_stake = max(self.metagraph.S).item() if len(self.metagraph.S) > 0 else 1.0
-                stake_weight = stake / max_stake if max_stake > 0 else 0.0
-            except Exception as e:
-                bt.logging.warning(f"Failed to get stake for UID {uid}: {e}")
-                stake_weight = 0.0
-
-            # 2. Get historical score (从历史记录计算平均)
-            historical_scores = [
-                h["score"] for h in list(self.history)[-50:]
-                if h.get("uid") == uid
-            ]
-            historical_avg = (
-                sum(historical_scores) / len(historical_scores)
-                if historical_scores else quality_score
-            )
-            historical_score = historical_avg / 100.0  # Normalize to 0-1
-
-            # 3. Normalize quality score to 0-1
+            # 1. Normalize quality score to 0-1
             normalized_quality = quality_score / 100.0
 
-            # 4. Composite score (15% stake + 75% quality + 10% history)
+            # 2. Calculate historical score component
+            # Using miner's historical performance stored in self.history
+            # If no history exists, default to average quality score
+            historical_score = 0.5  # Default to 50% if no historical data
+            
+            if uid in self.history and len(self.history[uid]['scores']) > 0:
+                # Calculate average of historical scores
+                hist_avg = sum(self.history[uid]['scores']) / len(self.history[uid]['scores'])
+                historical_score = hist_avg / 100.0  # Normalize to 0-1
+
+            # 3. Composite score based on new distribution:
+            # Original: 15% stake + 75% quality + 10% historical (total 100% of scoring components)
+            # New: 0% stake + 75% quality + 25% historical (total 100% of scoring components)
             composite = (
-                0.15 * stake_weight +
-                0.75 * normalized_quality +
-                0.10 * historical_score
+                0.75 * normalized_quality +      # 75% from quality (API obtained scores)
+                0.25 * historical_score          # 25% from historical
             )
 
             composite_scores[uid] = composite
@@ -872,7 +739,7 @@ class StoryValidator:
             # Log weight calculation details
             bt.logging.info("Weight calculation details:")
             sorted_weights = sorted(weights_dict.items(), key=lambda x: x[1], reverse=True)
-            for uid, weight in sorted_weights[:10]:  # Show top 10
+            for uid, weight in sorted_weights:  # 显示所有权重，不只是前10个
                 # Get miner info
                 try:
                     axon = self.metagraph.axons[uid]
@@ -886,9 +753,7 @@ class StoryValidator:
                 except Exception as e:
                     bt.logging.debug(f"  UID {uid}: weight={weight:.4f} (error getting details: {e})")
 
-            if len(sorted_weights) > 10:
-                bt.logging.info(f"  ... and {len(sorted_weights) - 10} more miners")
-
+            # Remove the "... and X more miners" message since we're showing all now
             # Convert to lists
             uids = list(weights_dict.keys())
             weights = [weights_dict[uid] for uid in uids]
@@ -934,224 +799,258 @@ class StoryValidator:
             current_block = self.subtensor.block
             bt.logging.info(f"🔗 Current block: {current_block}")
 
-            # 1. Select task type (deterministic based on block)
+            # Initialize step counter if not exists
+            if not hasattr(self, 'step'):
+                self.step = 0
+
+            # 1. Deterministically select task type based on block number
             task_type = self.select_task_type(current_block)
-            bt.logging.info(f"🎯 Task type: {task_type}")
-
-            # 2. Create task (deterministic based on block)
+            
+            # 2. Create task with deterministic context
             synapse, context = self.create_task(task_type, current_block)
+            context["task_type"] = task_type
+            
+            # 3. Select available miners to query
+            available_axons = []
+            selected_uids = []
+            
+            for uid in range(len(self.metagraph.axons)):
+                axon = self.metagraph.axons[uid]
+                if self._is_miner_available(uid, axon):
+                    available_axons.append(axon)
+                    selected_uids.append(uid)
+            
+            # Limit number of concurrent queries
+            if len(selected_uids) > self.config.num_concurrent_forwards:
+                # Select miners randomly but deterministically based on block
+                random.seed(current_block)
+                indices = list(range(len(selected_uids)))
+                random.shuffle(indices)
+                selected_indices = sorted(indices[:self.config.num_concurrent_forwards])
+                
+                selected_uids = [selected_uids[i] for i in selected_indices]
+                available_axons = [available_axons[i] for i in selected_indices]
 
-            # 3. Select miners
-            # _is_miner_available() excludes invalid axons (0.0.0.0, missing hotkey, etc.)
-            all_miners = self.metagraph.axons
-            available_miners = [
-                (uid, axon) for uid, axon in enumerate(all_miners)
-                if uid not in self.blacklist and self._is_miner_available(uid, axon)
-            ]
-
-            # Log filtered miners count
-            filtered_count = len(all_miners) - len(available_miners) - len(self.blacklist)
-            if filtered_count > 0:
-                bt.logging.debug(f"Filtered out {filtered_count} invalid axons (0.0.0.0 or invalid config)")
-
-            if not available_miners:
-                bt.logging.warning("No available miners")
-                await asyncio.sleep(self.query_interval)
+            if not selected_uids:
+                bt.logging.warning("No available miners to query")
                 return
 
-            # Select miners using deterministic selection based on block
-            # This ensures all validators at the same block select the same miners
-            # Query all available miners (no limit)
-            # This ensures all miners get scored for fair weight distribution
-            num_miners = len(available_miners)
+            bt.logging.info(f"📨 Querying {len(selected_uids)} miners for {task_type} task")
+            
+            # 4. Query miners with the task
+            try:
+                bt.logging.debug(f"📡 Querying miners: {len(available_axons)} available")
+                for i, axon in enumerate(available_axons):
+                    bt.logging.debug(f"   [{i}] UID {selected_uids[i]}: {axon.ip}:{axon.port} ({axon.hotkey[:8]}...)")
+                
+                responses = await self.query_miners(synapse, available_axons)
+                
+                # Log detailed response information
+                bt.logging.debug(f"📥 Received {len(responses)} responses from miners")
+                for i, response in enumerate(responses):
+                    uid = selected_uids[i]
 
-            # Sort miners by: 1) local EMA scores (primary), 2) on-chain incentive (secondary)
-            # This allows new miners with 0 incentive to be discovered and scored
-            # Note: Initially all scores are 0, so we use deterministic random for fair bootstrapping
-            sorted_miners = sorted(
-                available_miners,
-                key=lambda x: (
-                    self.scores.get(x[0], 0),  # Primary: local EMA score
-                    self.metagraph.I[x[0]].item() if x[0] < len(self.metagraph.I) else 0,  # Secondary: on-chain
-                ),
-                reverse=True
-            )
+                    # Debug: Log raw response type and attributes for model_info investigation
+                    bt.logging.debug(f"   UID {uid} raw response type: {type(response)}")
+                    if hasattr(response, 'model_info'):
+                        bt.logging.debug(f"   UID {uid} response.model_info (attr): {response.model_info}")
+                    if hasattr(response, 'model_dump'):
+                        try:
+                            dumped = response.model_dump()
+                            bt.logging.debug(f"   UID {uid} model_dump keys: {list(dumped.keys())}")
+                            bt.logging.debug(f"   UID {uid} model_dump model_info: {dumped.get('model_info')}")
+                        except Exception as e:
+                            bt.logging.debug(f"   UID {uid} model_dump error: {e}")
 
-            # Log miner selection for debugging
-            bt.logging.info(f"🔍 Querying ALL {len(available_miners)} available miners")
-
-            # Query all miners - no top_k/explore_k split needed
-            selected_uids = [uid for uid, _ in sorted_miners]
-            selected_axons = [axon for _, axon in sorted_miners]
-
-            bt.logging.info(f"📡 Querying {len(selected_axons)} miners: {selected_uids}")
-
-            # Log miner IPs for debugging
-            for uid, axon in zip(selected_uids, selected_axons):
-                bt.logging.debug(f"  → UID {uid}: {axon.ip}:{axon.port}")
-
-            # 4. Query miners
-            with Timer() as t:
-                responses = await self.query_miners(synapse, selected_axons)
-
-            bt.logging.info(f"⏱️  Query completed in {t.elapsed:.2f}s")
-
-            # 5. Score responses
-            scores = {}
-            for uid, response, axon in zip(selected_uids, responses, selected_axons):
-                bt.logging.debug(f"\n{'='*60}")
-                bt.logging.debug(f"Evaluating Miner UID {uid} ({axon.ip}:{axon.port})")
-                bt.logging.debug(f"{'='*60}")
-
-                # Check and log response status (INFO level for operators to see without --logging.debug)
-                if response is None:
-                    bt.logging.warning(
-                        f"⚠️  Miner {uid} ({axon.ip}:{axon.port}): Response is None "
-                        f"(connection failed, timeout, or invalid response)"
-                    )
-                    scores[uid] = 0.0
-                    continue
-
-                # Handle both Synapse object and dict response types
-                # (Bittensor may return dict instead of deserialized Synapse in some cases)
-                if isinstance(response, dict):
-                    bt.logging.info(f"📦 Response is dict. Keys: {list(response.keys())}")
-
-                    # Case 1: Response dict has standard synapse fields (output_data, generation_time, etc.)
-                    if 'output_data' in response:
-                        output_data_val = response.get('output_data')
-                        bt.logging.info(f"   Using output_data field from response")
-                    # Case 2: Response is the deserialized output_data directly (e.g. {'generated_text': '...'} or task results)
+                    # Check if response is a dictionary or object
+                    if isinstance(response, dict):
+                        output_data = response.get('output_data')
+                        generation_time = response.get('generation_time', 0.0)
+                        model_info = response.get('model_info', {})
                     else:
-                        # The dendrite may return the output_data directly after calling deserialize()
-                        output_data_val = response
-                        bt.logging.info(f"   Treating entire response dict as output_data")
+                        output_data = getattr(response, 'output_data', None)
+                        generation_time = getattr(response, 'generation_time', 0.0)
+                        model_info = getattr(response, 'model_info', {})
 
-                    # Convert dict to Synapse for uniform handling
-                    response = StoryGenerationSynapse(
-                        task_type=response.get('task_type', synapse.task_type),
-                        user_input=response.get('user_input', synapse.user_input),
-                        blueprint=response.get('blueprint', synapse.blueprint),
-                        characters=response.get('characters', synapse.characters),
-                        story_arc=response.get('story_arc', synapse.story_arc),
-                        chapter_ids=response.get('chapter_ids', synapse.chapter_ids),
-                        output_data=output_data_val,
-                        generation_time=response.get('generation_time', 0.0),
-                        miner_version=response.get('miner_version', 'unknown'),
-                        model_info=response.get('model_info', {})
-                    )
+                    output_size = len(str(output_data)) if output_data else 0
+                    bt.logging.debug(f"   UID {uid}: output_data size={output_size}, gen_time={generation_time:.2f}s, model_info={model_info}")
+                    
+                    if not output_data or output_data == {}:
+                        bt.logging.warning(f"   UID {uid}: ⚠️ Empty output_data received!")
+                    else:
+                        bt.logging.info(f"   UID {uid}: ✅ Valid output_data received (size: {output_size})")
+                        
+            except Exception as e:
+                bt.logging.error(f"❌ Error querying miners: {e}")
+                responses = [synapse] * len(available_axons)
 
-                if not hasattr(response, 'output_data'):
-                    bt.logging.warning(
-                        f"⚠️  Miner {uid} ({axon.ip}:{axon.port}): Response missing output_data attribute "
-                        f"(response type: {type(response).__name__})"
-                    )
-                    bt.logging.info(f"   Available attributes: {[a for a in dir(response) if not a.startswith('_')][:10]}")
-                    scores[uid] = 0.0
-                    continue
+            # 5. Get scores from external API
+            scores = {}
+            try:
+                scores = self.get_scores_from_api(
+                    responses=responses,
+                    context=context,
+                    miner_uids=selected_uids
+                )
+                bt.logging.info(f"✅ Got scores from API for {len(scores)} miners")
+            except Exception as e:
+                bt.logging.error(f"❌ Error getting scores from API: {e}")
+                # Fallback to zero scores if API fails
+                scores = {uid: 0.0 for uid in selected_uids}
 
-                # Extract response data for logging
-                output_data = response.output_data
-                generation_time = getattr(response, 'generation_time', 0.0)
-                miner_version = getattr(response, 'miner_version', 'unknown')
-                model_info = getattr(response, 'model_info', {})
-
-                if output_data is None:
-                    bt.logging.warning(
-                        f"⚠️  Miner {uid} ({axon.ip}:{axon.port}): output_data is None "
-                        f"(gen_time: {generation_time}s)"
-                    )
-                    scores[uid] = 0.0
-                    continue
-
-                # Additional debug details (only with --logging.debug)
-                bt.logging.debug(f"Response type: {type(response)}")
-                bt.logging.debug(f"output_data type: {type(output_data)}")
-                bt.logging.debug(f"output_data value: {output_data}")
-
-                # Log response metadata
-                bt.logging.debug(f"Response metadata:")
-                bt.logging.debug(f"  - Generation time: {generation_time:.2f}s")
-                bt.logging.debug(f"  - Miner version: {miner_version}")
-                bt.logging.debug(f"  - Model info: {model_info}")
-
-                # Log output data preview
-                output_preview = str(output_data)[:200] + "..." if len(str(output_data)) > 200 else str(output_data)
-                bt.logging.debug(f"  - Output preview: {output_preview}")
-
-                # Check plagiarism
-                is_plagiarism, plag_type, similarity = self.detect_plagiarism(response, responses)
-
-                if is_plagiarism:
-                    bt.logging.warning(f"⚠️  Miner {uid}: Plagiarism detected ({plag_type}, similarity={similarity:.2f})")
-                    self.violations[uid] = self.violations.get(uid, 0) + 1
-
-                    if self.violations[uid] >= 3:
-                        self.blacklist.add(uid)
-                        bt.logging.error(f"🚫 Miner {uid} blacklisted (3 violations)")
-
-                    scores[uid] = 0.0
-                    continue
-
-                # Score response
-                score, breakdown = self.score_response(response, context)
-                scores[uid] = score
-
-                # Detailed scoring breakdown
-                bt.logging.info(f"📊 Miner {uid} ({axon.ip}): {score:.2f} points")
-                bt.logging.debug(f"  Technical Score: {breakdown['technical']:.1f}/30")
-                if 'technical_breakdown' in breakdown:
-                    for k, v in breakdown['technical_breakdown'].items():
-                        bt.logging.debug(f"    - {k}: {v}")
-
-                bt.logging.debug(f"  Structure Score: {breakdown['structure']:.1f}/40")
-                if 'structure_breakdown' in breakdown:
-                    for k, v in breakdown['structure_breakdown'].items():
-                        bt.logging.debug(f"    - {k}: {v}")
-
-                bt.logging.debug(f"  Content Score: {breakdown['content']:.1f}/30")
-                if 'content_breakdown' in breakdown:
-                    for k, v in breakdown['content_breakdown'].items():
-                        bt.logging.debug(f"    - {k}: {v}")
-
-                bt.logging.debug(f"  Base Score: {breakdown.get('base_score', 0):.2f}/100")
-
-                if 'model_quality' in breakdown:
-                    bt.logging.debug(f"  Model Quality Multiplier: {breakdown['model_quality'].get('final_multiplier', 1.0):.2f}x")
-
-                bt.logging.debug(f"  Final Score: {score:.2f}")
-
-                # Record history (v3.0.0: store output_data instead of output_json)
-                self.history.append({
-                    "uid": uid,
-                    "task_type": task_type,
-                    "output_data": response.output_data,
-                    "score": score,
-                    "timestamp": time.time()
-                })
-
-            # 6. Update EMA scores
+            # 6. Update EMA scores for all queried miners
             self.update_ema_scores(scores)
 
-            # 7. Save state to file (persist EMA scores across restarts)
-            self._save_state()
+            # 7. Periodically set weights on chain
+            if self.step > 0 and self.step % self.weight_update_frequency == 0:
+                await self.set_weights()
 
-            # 8. Update statistics
+            # 10. Log step results
+            avg_score = sum(scores.values()) / len(scores) if scores else 0.0
+            bt.logging.info(
+                f"📊 Step {self.step} completed | Task: {task_type} | "
+                f"Miners: {len(selected_uids)} | Avg score: {avg_score:.2f}"
+            )
+
+            # 11. Update statistics
             self.total_queries += 1
             self.successful_queries += len([s for s in scores.values() if s > 0])
             self.total_rewards += sum(scores.values())
 
-            # 9. Set weights (rate limited by blocks, not query count)
-            # Try to set weights every step, let can_set_weights() handle rate limiting
-            if self.can_set_weights():
-                bt.logging.info(f"\n{'='*60}")
-                bt.logging.info(f"Setting weights (query #{self.total_queries})")
-                bt.logging.info(f"{'='*60}")
-                await self.set_weights()
-
+            # 12. Increment step counter
+            self.step += 1
+            self.last_updated_block = current_block
         except Exception as e:
             bt.logging.error(f"Error in run_step: {e}")
             bt.logging.error(traceback.format_exc())
+            # Re-raise the exception to prevent silent failures
+            raise
+
+    def get_scores_from_api(
+        self,
+        responses: List[StoryGenerationSynapse],
+        context: Dict[str, Any],
+        miner_uids: List[int]
+    ) -> Dict[int, float]:
+        """
+        从API获取矿工评分
+        """
+        # 准备要发送到API的数据
+        synapse_data_list = []
+        
+        for i, response in enumerate(responses):
+            uid = miner_uids[i] if i < len(miner_uids) else -1
+            
+            # 修复处理response可能为字典的问题
+            # 注意：需要正确处理 None 值（属性存在但值为 None 的情况）
+            if isinstance(response, dict):
+                output_data = response.get('output_data')
+                generation_time = response.get('generation_time')
+                task_type = response.get('task_type')
+                model_info = response.get('model_info')
+            else:
+                output_data = getattr(response, 'output_data', None)
+                generation_time = getattr(response, 'generation_time', None)
+                task_type = getattr(response, 'task_type', None)
+                model_info = getattr(response, 'model_info', None)
+            
+            # 处理可能的None值（根据数据完整性规范，保留原始值，仅当值为None时提供默认值）
+            if generation_time is None:
+                generation_time = 0.0
+            if task_type is None:
+                task_type = ''
+            
+            output_size = len(str(output_data)) if output_data else 0
+            bt.logging.debug(f"UID {uid} API prep: output_data size={output_size}, type={type(output_data)}")
+            bt.logging.debug(f"UID {uid} model_info: {model_info}")
+            
+            # WORKAROUND: If model_info is None, try to extract from output_data._model_info
+            # This is because Bittensor doesn't transmit model_info field properly
+            if model_info is None and isinstance(output_data, dict):
+                model_info = output_data.get("_model_info")
+                if model_info:
+                    bt.logging.info(f"UID {uid} model_info extracted from output_data._model_info: {model_info}")
+                else:
+                    bt.logging.warning(f"UID {uid} model_info is None and not found in output_data")
+
+            synapse_data_list.append({
+                "output_data": output_data,
+                "generation_time": generation_time,
+                "task_type": task_type,
+                "model_info": model_info
+            })
+        
+        # 为每个UID单独发送请求到API
+        scores = {}
+        
+        for i, uid in enumerate(miner_uids):
+            # 准备发送到API的数据 - 为单个UID
+            api_data = {
+                "netuid": self.config.netuid,
+                "hotkeys": [self.metagraph.hotkeys[uid]],
+                "uids": [uid],
+                "task_type": context.get("task_type", ""),
+                "responses": [synapse_data_list[i]] if i < len(synapse_data_list) else [{}]
+            }
+            
+            # 记录请求日志
+            bt.logging.info(f"📤 Validator sending request to API for UID {uid}: netuid={self.config.netuid}")
+            bt.logging.debug(f"Validator request data for UID {uid}: {api_data}")
+            
+            # 发送请求到API
+            try:
+                api_url = f"{self.config.api_endpoint}/score-miners/"
+                bt.logging.info(f"Attempting to connect to API at {api_url} for UID {uid}")
+                response = requests.post(api_url, json=api_data, timeout=60)
+                
+                bt.logging.info(f"📥 Validator received API response for UID {uid}: Status {response.status_code}")
+                
+                if response.status_code == 200:
+                    scores_data = response.json()
+                    bt.logging.info(f"📥 Validator API returned {len(scores_data)} score records for UID {uid}")
+                    
+                    # 将API返回的评分转换为字典格式
+                    for score_item in scores_data:
+                        score_uid = score_item.get('uid', 0)
+                        score = score_item.get('score', 0.0)
+                        breakdown = score_item.get('breakdown', {})
+                        timestamp = score_item.get('timestamp', 'N/A')
+                        
+                        scores[score_uid] = score
+                        bt.logging.info(f"   UID {score_uid}: score={score:.2f}, timestamp={timestamp}")
+                        bt.logging.debug(f"     Breakdown: tech={breakdown.get('technical', 0)}, struct={breakdown.get('structure', 0)}, content={breakdown.get('content', 0)}, narrative={breakdown.get('narrative', 0)}")
+                else:
+                    bt.logging.error(f"API request failed for UID {uid} with status {response.status_code}: {response.text}")
+                    # 为失败的UID返回默认评分
+                    scores[uid] = 0.0
+                    
+            except Exception as e:
+                bt.logging.error(f"Error getting score from API for UID {uid}: {e}")
+                # 为失败的UID返回默认评分
+                scores[uid] = 0.0
+        
+        bt.logging.info(f"Validator received scores for UIDs: {list(scores.keys())}")
+        return scores
+
+    def get_config(self):
+        """Get configuration from command line arguments."""
+        parser = argparse.ArgumentParser()
+
+        # Add Bittensor standard arguments
+        bt.Subtensor.add_args(parser)
+        bt.Wallet.add_args(parser)
+        bt.logging.add_args(parser)
+
+        # Add custom arguments
+        parser.add_argument("--netuid", type=int, default=92, help="Subnet netuid (StoryNet subnet ID)")
+        parser.add_argument("--num_concurrent_forwards", type=int, default=255, help="Number of concurrent forwards")
+        parser.add_argument("--timeout", type=int, default=30, help="Query timeout in seconds")
+        parser.add_argument("--weight_update_interval", type=int, default=100, help="How often to update weights")
+        # 添加一个选项来指定API端点
+        parser.add_argument("--api_endpoint", type=str, default="https://api.storyai.art", 
+                           help="API endpoint for scoring")
+
+        return parser.parse_args()
 
     async def run(self):
         """Main run loop."""
@@ -1207,6 +1106,9 @@ def get_config():
 
     # Add custom arguments
     parser.add_argument("--netuid", type=int, default=92, help="Subnet netuid (StoryNet subnet ID)")
+    parser.add_argument("--num_concurrent_forwards", type=int, default=255, help="Number of concurrent forwards")
+    parser.add_argument("--timeout", type=int, default=30, help="Query timeout in seconds")
+    parser.add_argument("--weight_update_interval", type=int, default=100, help="How often to update weights")
 
     # Parse and add bittensor config
     config = bt.Config(parser)

@@ -24,9 +24,9 @@ CHANGES FROM 3.1.0:
 - Enables validators to apply dynamic reward multipliers based on model quality
 
 CHANGES FROM 3.0.0:
-- Fixed SynapseParsingError by overriding get_total_size()
-- Now returns header-only size instead of full object size
-- Allows large Dict/List fields to be transmitted in HTTP body
+- Removed custom get_total_size() override
+- Allow Bittensor framework to handle size calculation and data transmission
+- Rely on Bittensor's built-in dual-channel mechanism for large data
 
 CHANGES FROM 2.1.0:
 - Removed compression (caused double-encoding overhead)
@@ -38,9 +38,9 @@ CHANGES FROM 2.1.0:
 
 DESIGN PHILOSOPHY:
 - Keep It Simple: Use basic Python types
-- Trust Bittensor: Let framework handle serialization
+- Trust Bittensor: Let framework handle serialization and transmission
 - Follow Standards: Based on OCR subnet and text-prompting subnet patterns
-- Avoid Over-Engineering: No manual compression/encoding
+- Avoid Over-Engineering: No manual size calculations or encoding
 
 REFERENCES:
 - OCR Subnet: https://github.com/opentensor/ocr_subnet
@@ -258,40 +258,6 @@ class StoryGenerationSynapse(bt.Synapse):
             return ["chapters"]  # Must be array of chapter objects
 
         return []
-
-    def get_total_size(self) -> int:
-        """
-        Calculate size of data transmitted in HTTP headers only.
-
-        IMPORTANT: Bittensor transmits data in TWO places:
-        1. HTTP Headers: Metadata + dummy objects for required fields (~500 bytes)
-        2. HTTP Body: Full model_dump() with actual Dict/List data (via json= parameter)
-
-        The parent class's get_total_size() recursively measures the ENTIRE object
-        including all nested Dict/List data, which causes SynapseParsingError when
-        this large number appears in the 'total_size' header field.
-
-        This override returns ONLY the header-transmitted size to prevent the error.
-
-        Returns:
-            int: Estimated size of data transmitted in headers (not body)
-        """
-        # Create a copy and clear large Dict fields that go in HTTP body
-        header_only = self.model_copy()
-        header_only.blueprint = None
-        header_only.characters = None
-        header_only.story_arc = None
-        header_only.output_data = None
-
-        # Calculate size of remaining fields (what actually goes in headers)
-        # Only small fields like task_type, user_input, etc.
-        header_size = sys.getsizeof(header_only)
-
-        # Add estimated overhead for dendrite/axon metadata
-        header_size += 512
-
-        self.total_size = header_size
-        return self.total_size
 
     def deserialize(self) -> Optional[Dict[str, Any]]:
         """

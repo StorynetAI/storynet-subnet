@@ -134,7 +134,11 @@ class StoryMiner:
             Synapse with generated content filled in
         """
         try:
-            bt.logging.info(f"📨 Received {synapse.task_type} request")
+            bt.logging.info(f"📨 Received {synapse.task_type} request from {synapse.validator_hotkey}")
+            bt.logging.debug(f"Input data: user_input='{synapse.user_input[:100]}...', blueprint_keys={list(synapse.blueprint.keys()) if synapse.blueprint else 'None'}, "
+                             f"characters_len={len(synapse.characters) if synapse.characters else 0}, "
+                             f"story_arc_keys={list(synapse.story_arc.keys()) if synapse.story_arc else 'None'}, "
+                             f"chapter_ids={synapse.chapter_ids}")
 
             with Timer() as t:
                 # Build input_data from synapse fields (Protocol v3.1.0)
@@ -148,23 +152,35 @@ class StoryMiner:
                 }
 
                 # Use unified generator (supports local models, APIs, etc.)
+                bt.logging.debug(f"Calling generator with task_type: {synapse.task_type}")
                 result = await self.generator.generate(input_data)
+                bt.logging.debug(f"Generator result type: {type(result)}, keys: {result.keys() if hasattr(result, 'keys') else 'N/A'}")
 
                 # Extract generated content from generator response
                 generated_content = result.get("generated_content", "")
+                bt.logging.debug(f"Generated content length: {len(generated_content)}, preview: '{generated_content[:200]}...'")
 
                 # Try to parse as JSON if task expects structured output
                 try:
                     if generated_content:
                         # Clean markdown wrappers if present
                         content = generated_content.strip()
+                        
+                        # Handle different types of code blocks
                         if content.startswith("```json"):
+                            # Extract content from ```json code blocks
                             content = content.split("```json")[1].split("```")[0].strip()
                         elif content.startswith("```"):
+                            # Extract content from generic code blocks
                             content = content.split("```")[1].split("```")[0].strip()
-
+                        
                         # Parse JSON
                         output_data = json.loads(content)
+                        bt.logging.debug(f"Parsed output_data type: {type(output_data)}, keys: {output_data.keys() if isinstance(output_data, dict) else 'N/A'}")
+
+                        # Log the actual generated content for comparison with what validator receives
+                        bt.logging.success(f"🎯 Generated {synapse.task_type} result: {len(json.dumps(output_data))} chars")
+                        bt.logging.trace(f"Generated content: {json.dumps(output_data)[:500]}...")  # Truncate for log
 
                         # Validate format matches task type (Protocol v3.2.0)
                         # ALL tasks must return Dict (JSON object), never List (JSON array)
@@ -184,10 +200,23 @@ class StoryMiner:
                                 "raw_output": output_data
                             }
                     else:
+                        bt.logging.warning(f"No generated content from generator, returning error object")
                         output_data = {"error": "Empty response from generator"}
-                except json.JSONDecodeError:
-                    # If not JSON, return raw text
-                    output_data = {"generated_text": generated_content}
+                except json.JSONDecodeError as e:
+                    bt.logging.info(f"Generated content is not JSON (this is expected for story content): {e}")
+                    # For story generation tasks, non-JSON content is normal
+                    # Try to extract structured data from markdown content
+                    if generated_content:
+                        # For story tasks, return the content in a structured format
+                        output_data = {
+                            "generated_text": generated_content,
+                            "format": "text",
+                            "task_type": synapse.task_type,
+                            "content_preview": generated_content[:200] + "..." if len(generated_content) > 200 else generated_content
+                        }
+                        bt.logging.debug(f"Returning story content as structured output_data: {type(output_data)}")
+                    else:
+                        output_data = {"error": "Empty response from generator"}
 
             # Fill response fields (Protocol v3.2.0)
             synapse.output_data = output_data
@@ -195,23 +224,45 @@ class StoryMiner:
             synapse.miner_version = "2.0.0"  # Updated version with flexible generators
 
             # Populate model_info for transparency (Protocol v3.2.0)
-            synapse.model_info = {
+            model_info = {
                 "mode": self.generator.get_mode(),
                 "name": self.generator.get_model_info().get("name", "unknown"),
                 "version": self.generator.get_model_info().get("version"),
                 "provider": self.generator.get_model_info().get("provider"),
                 "parameters": self.generator.get_model_info().get("parameters", {})
             }
+            synapse.model_info = model_info
+
+            # WORKAROUND: Also embed model_info in output_data since Bittensor doesn't transmit model_info field
+            if isinstance(output_data, dict):
+                output_data["_model_info"] = model_info
+                synapse.output_data = output_data
 
             # Update statistics
             self.requests_processed += 1
             self.total_generation_time += t.elapsed
 
+            output_size = len(json.dumps(output_data, ensure_ascii=False)) if output_data else 0
             bt.logging.success(
                 f"✅ Generated {synapse.task_type} in {t.elapsed:.2f}s "
-                f"(output: {len(json.dumps(result, ensure_ascii=False))} chars)"
+                f"(output: {output_size} chars)"
             )
             bt.logging.info(f"📋 Model info set: {synapse.model_info}")
+            bt.logging.debug(f"Sending output_data: {type(output_data)} with keys: {output_data.keys() if isinstance(output_data, dict) else 'N/A'}")
+
+            # Debug: Check if model_info is included in serialization
+            try:
+                synapse_dump = synapse.model_dump()
+                bt.logging.info(f"🔍 Synapse model_dump() model_info: {synapse_dump.get('model_info')}")
+                bt.logging.debug(f"🔍 Synapse model_dump() keys: {list(synapse_dump.keys())}")
+            except Exception as e:
+                bt.logging.warning(f"⚠️ Error dumping synapse: {e}")
+
+            # Double-check that output_data was set correctly
+            if not synapse.output_data:
+                bt.logging.error("❌ ERROR: synapse.output_data is empty after assignment!")
+            else:
+                bt.logging.success(f"🎯 Synapse output_data set with {len(json.dumps(synapse.output_data))} chars")
 
             return synapse
 
@@ -232,6 +283,8 @@ class StoryMiner:
                 "provider": self.generator.get_model_info().get("provider"),
                 "parameters": self.generator.get_model_info().get("parameters", {})
             }
+
+            bt.logging.warning(f"Sending error response: {synapse.output_data}")
 
             return synapse
 
