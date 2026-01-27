@@ -12,6 +12,8 @@ services:
       - PYTHONUNBUFFERED=1
       # - WALLET_NAME=my_wallet
       # - HOTKEY_NAME=my_hotkey
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"      
     volumes:
       - ~/.bittensor:/root/.bittensor  
     ports:
