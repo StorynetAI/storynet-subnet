@@ -17,6 +17,7 @@ Usage:
         --logging.info
 """
 
+
 import argparse
 import asyncio
 import json
@@ -933,7 +934,7 @@ class StoryValidator:
         miner_uids: List[int]
     ) -> Dict[int, float]:
         """
-        从API获取矿工评分
+        从API获取矿工评分 - 批量请求版本
         """
         # 准备要发送到API的数据
         synapse_data_list = []
@@ -980,53 +981,55 @@ class StoryValidator:
                 "model_info": model_info
             })
         
-        # 为每个UID单独发送请求到API
+        # 发送批量请求到API - 一次性为所有矿工评分
         scores = {}
         
-        for i, uid in enumerate(miner_uids):
-            # 准备发送到API的数据 - 为单个UID
-            api_data = {
-                "netuid": self.config.netuid,
-                "hotkeys": [self.metagraph.hotkeys[uid]],
-                "uids": [uid],
-                "task_type": context.get("task_type", ""),
-                "responses": [synapse_data_list[i]] if i < len(synapse_data_list) else [{}]
-            }
+        # 准备批量请求数据
+        api_data = {
+            "netuid": self.config.netuid,
+            "hotkeys": [self.metagraph.hotkeys[uid] for uid in miner_uids],
+            "uids": miner_uids,
+            "task_type": context.get("task_type", ""),
+            "responses": synapse_data_list
+        }
+        
+        # 记录批量请求日志
+        bt.logging.info(f"📤 Sending bulk request to API for {len(miner_uids)} miners: netuid={self.config.netuid}")
+        bt.logging.debug(f"Bulk request data: {api_data}")
+        
+        # 发送批量请求到API
+        try:
+            api_url = f"{self.config.api_endpoint}/score-miners/"
+            bt.logging.info(f"Attempting to connect to API at {api_url} for {len(miner_uids)} miners")
             
-            # 记录请求日志
-            bt.logging.info(f"📤 Validator sending request to API for UID {uid}: netuid={self.config.netuid}")
-            bt.logging.debug(f"Validator request data for UID {uid}: {api_data}")
+            response = requests.post(api_url, json=api_data, timeout=120)  # 增加超时时间以适应批量请求
             
-            # 发送请求到API
-            try:
-                api_url = f"{self.config.api_endpoint}/score-miners/"
-                bt.logging.info(f"Attempting to connect to API at {api_url} for UID {uid}")
-                response = requests.post(api_url, json=api_data, timeout=60)
+            bt.logging.info(f"📥 Received bulk API response: Status {response.status_code}")
+            
+            if response.status_code == 200:
+                scores_data = response.json()
+                bt.logging.info(f"📥 Bulk API returned {len(scores_data)} score records")
                 
-                bt.logging.info(f"📥 Validator received API response for UID {uid}: Status {response.status_code}")
-                
-                if response.status_code == 200:
-                    scores_data = response.json()
-                    bt.logging.info(f"📥 Validator API returned {len(scores_data)} score records for UID {uid}")
+                # 将API返回的评分转换为字典格式
+                for score_item in scores_data:
+                    score_uid = score_item.get('uid', 0)
+                    score = score_item.get('score', 0.0)
+                    breakdown = score_item.get('breakdown', {})
+                    timestamp = score_item.get('timestamp', 'N/A')
                     
-                    # 将API返回的评分转换为字典格式
-                    for score_item in scores_data:
-                        score_uid = score_item.get('uid', 0)
-                        score = score_item.get('score', 0.0)
-                        breakdown = score_item.get('breakdown', {})
-                        timestamp = score_item.get('timestamp', 'N/A')
-                        
-                        scores[score_uid] = score
-                        bt.logging.info(f"   UID {score_uid}: score={score:.2f}, timestamp={timestamp}")
-                        bt.logging.debug(f"     Breakdown: tech={breakdown.get('technical', 0)}, struct={breakdown.get('structure', 0)}, content={breakdown.get('content', 0)}, narrative={breakdown.get('narrative', 0)}")
-                else:
-                    bt.logging.error(f"API request failed for UID {uid} with status {response.status_code}: {response.text}")
-                    # 为失败的UID返回默认评分
+                    scores[score_uid] = score
+                    bt.logging.info(f"   UID {score_uid}: score={score:.2f}, timestamp={timestamp}")
+                    bt.logging.debug(f"     Breakdown: tech={breakdown.get('technical', 0)}, struct={breakdown.get('structure', 0)}, content={breakdown.get('content', 0)}, narrative={breakdown.get('narrative', 0)}")
+            else:
+                bt.logging.error(f"Bulk API request failed with status {response.status_code}: {response.text}")
+                # 为所有矿工返回默认评分
+                for uid in miner_uids:
                     scores[uid] = 0.0
                     
-            except Exception as e:
-                bt.logging.error(f"Error getting score from API for UID {uid}: {e}")
-                # 为失败的UID返回默认评分
+        except Exception as e:
+            bt.logging.error(f"Error getting scores from bulk API request: {e}")
+            # 为所有矿工返回默认评分
+            for uid in miner_uids:
                 scores[uid] = 0.0
         
         bt.logging.info(f"Validator received scores for UIDs: {list(scores.keys())}")
