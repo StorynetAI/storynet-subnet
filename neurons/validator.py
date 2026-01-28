@@ -17,7 +17,6 @@ Usage:
         --logging.info
 """
 
-
 import argparse
 import asyncio
 import json
