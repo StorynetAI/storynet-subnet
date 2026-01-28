@@ -92,7 +92,7 @@ class StoryValidator:
         self.ema_alpha = float(os.getenv("EMA_ALPHA", "0.1"))
         self.temperature = float(os.getenv("SOFTMAX_TEMPERATURE", "2.0"))
         # 修改权重更新频率，从固定100改为可配置参数，默认为10
-        self.weight_update_frequency = int(os.getenv("WEIGHT_UPDATE_FREQUENCY", "100"))
+        self.weight_update_frequency = int(os.getenv("WEIGHT_UPDATE_FREQUENCY", "10"))
 
         # Weight submission tracking (block-based rate limiting)
         self.last_weights_block = 0
