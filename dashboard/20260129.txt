@@ -1,0 +1,228 @@
+UID 3 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 4 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 7 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 10 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 12 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 13 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 14 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 15 model_info: {'mode': 'cloud', 'name': 'deepseek-ai/DeepSeek-V3', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 16 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 17 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 18 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 19 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 20 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 21 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 22 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 23 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 24 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 25 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 26 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 27 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 28 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 29 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 30 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 31 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 32 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 33 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 34 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 35 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 36 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 37 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 38 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 39 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 40 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 41 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 42 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 43 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 44 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 45 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 46 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 47 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 48 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 49 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 50 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 51 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 52 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 53 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 54 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 55 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 56 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 57 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 58 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 59 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 60 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 61 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 62 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 63 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 64 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 65 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 66 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 67 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 68 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 69 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 70 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 71 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 72 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 73 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 74 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 75 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 76 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 77 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 79 model_info: {'mode': 'local', 'name': 'glm-4-plus'}
+UID 80 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 81 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 82 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 83 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 84 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 85 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 86 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 87 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 88 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 89 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 90 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 91 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 92 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 93 model_info: {'mode': 'local', 'name': 'glm-4', 'version': None, 'provider': 'zhipu', 'parameters': {}}
+UID 94 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 95 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 96 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 97 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 98 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 99 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 100 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 101 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 102 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 103 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 104 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 105 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 106 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 107 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 108 model_info: {'mode': 'local', 'name': 'glm-4', 'version': None, 'provider': 'zhipu', 'parameters': {}}
+UID 112 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 113 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 114 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 115 model_info: {'mode': 'local', 'name': 'glm-4', 'version': None, 'provider': 'zhipu', 'parameters': {}}
+UID 116 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 117 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 118 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 120 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 121 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 122 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 123 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 124 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': '1.0', 'provider': 'openai', 'parameters': {}, 'miner_version': '2.1.0', 'timestamp': 1769675776.3549187, 'api_provider': 'openai'}
+UID 125 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 126 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 127 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 128 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 130 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 131 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 133 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 134 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 135 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 136 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 138 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 140 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 141 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 142 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 143 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 144 model_info: {'mode': 'cloud', 'name': 'Qwen/Qwen3-235B-A22B-Instruct-2507-TEE', 'version': 'cloud', 'provider': 'chutes', 'parameters': {'endpoint': 'https://llm.chutes.ai/v1', 'temperature': 0.8, 'max_tokens': 3072}}
+UID 147 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 148 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 149 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 151 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 153 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 154 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 155 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 156 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 157 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 158 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 159 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 160 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 164 model_info: {'mode': 'local', 'name': 'glm-4', 'version': None, 'provider': 'zhipu', 'parameters': {}}
+UID 165 model_info: {'mode': 'cloud', 'name': 'Asimrao/Qwen2.5-72B-Instruct-sn92-v1-41229f30', 'version': None, 'provider': 'together', 'parameters': {}}
+UID 166 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 168 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 171 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 173 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 174 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 175 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 176 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 177 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 178 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 179 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 180 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 181 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 182 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 183 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 184 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 185 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 186 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 187 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 188 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 189 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 190 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 191 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 192 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 193 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 194 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 195 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 196 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 197 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 198 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 199 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 200 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 201 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 202 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 203 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 204 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 205 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 206 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 207 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 208 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 209 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 210 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 211 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 212 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 213 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 214 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 215 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 216 model_info: {'mode': 'cloud', 'name': 'gpt-5-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 217 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 218 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 219 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 220 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 221 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 222 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 223 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 224 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 225 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 226 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 227 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 228 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 229 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 230 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 231 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 232 model_info: {'mode': 'cloud', 'name': 'gpt-4o-mini', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 233 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 234 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 235 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 236 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 237 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 238 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 239 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 240 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 241 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 242 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 243 model_info: {'mode': 'cloud', 'name': 'gpt-4.1-nano', 'version': None, 'provider': 'openai', 'parameters': {}}
+UID 244 model_info: {'mode': 'local', 'name': 'qwen2.5:7b', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 245 model_info: {'mode': 'local', 'name': 'qwen2.5:7b', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 246 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 247 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 248 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 249 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 250 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 251 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 252 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 253 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 254 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
+UID 255 model_info: {'mode': 'local', 'name': 'glm-4', 'version': '2024-01', 'provider': 'openai', 'parameters': {'temperature': 0.8}}
